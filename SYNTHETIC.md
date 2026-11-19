@@ -25,5 +25,7 @@ The expanded experiment adds independently structured development clauses in sep
 - `out/synthetic/report.json` and `evaluation.md` contain baseline, language, context, sanity and challenge results.
 - `out/synthetic/error_analysis.json` records challenge scores and rule evidence with the largest errors first.
 - `out/synthetic/model.json` contains the two selected regression heads for CLI and API use.
+- `out/synthetic-v2/diagnostics.json` records three repetitions on the same data and English-to-Hindi and Hindi-to-English transfer. These runs do not change the selected checkpoint.
+- `out/synthetic-v2/submission` contains the editable two-column paper, PDF and PowerPoint derived from the measured results.
 
 False acceptance means a synthetic negative receives a Preserved decision. False rejection means a synthetic positive does not. An empty class has an undefined rate. Text evidence reports observed pattern changes and can flag lawful paraphrases or miss meaning changes. The API reports that uncertainty is uncalibrated. Neither the labels nor model outputs represent human legal judgments.

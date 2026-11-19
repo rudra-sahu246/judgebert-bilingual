@@ -2,7 +2,7 @@
 
 ## Automated synthetic workflow
 
-The main workflow uses synthetic supervision and requires zero human annotation. With the environment and encoder cache installed, `./reproduce.ps1` runs both experiments, evaluates the selected checkpoint, exports the research materials and runs the offline tests.
+The main workflow uses synthetic supervision and requires zero human annotation. With the environment and encoder cache installed, `./reproduce.ps1` runs both experiments, evaluates the selected checkpoint, exports the research materials and runs the offline tests. Reproductions go into a new directory under `out/reproductions` to preserve existing checkpoints.
 
 ```powershell
 ./reproduce.ps1
@@ -127,6 +127,8 @@ docker run --rm --cpus=1 --memory=2g --read-only --cap-drop=ALL --security-opt=n
 Deploy a new model by mounting a new release directory and replacing the container. Check `/healthz` before routing traffic. To roll back, restart with the previous approved directory and image.
 
 After building and training the demo, run `./smoke-container.ps1` in PowerShell. This checks offline inference inside a read-only container and confirms that the HTTP service refuses to start with demo weights.
+
+To verify the trained synthetic model with a cached image, run `./verify-container.ps1`. It reuses the encoder layers and checks authenticated English and Hindi scoring in a temporary container with networking disabled, one CPU and a 2 GB memory limit. It removes the test container on exit. For a fresh synthetic deployment, build the main Dockerfile, mount the directory containing the trained `model.json`, and pass `-e LMP_ALLOW_SYNTHETIC=1` when starting the container. The API marks its responses as synthetic.
 
 ### Example evidence review
 

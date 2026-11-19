@@ -35,7 +35,7 @@ def package(root):
             "transformers", "tokenizers", "fastapi", "uvicorn")
     }})
     files = sorted(path for path in root.rglob("*") if path.is_file()
-                   and "presentation-build" not in path.relative_to(root).parts
+                   and not {"presentation-build", "paper-build"} & set(path.relative_to(root).parts)
                    and path.name not in ("run-manifest.json", "research-run.zip"))
     manifest = {str(path.relative_to(root).as_posix()): sha256(path.read_bytes()).hexdigest()
                 for path in files}

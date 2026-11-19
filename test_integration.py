@@ -14,7 +14,7 @@ from service import create_app
 @unittest.skipUnless(os.environ.get("LMP_RUN_INTEGRATION") == "1", "Enable cached model smoke test")
 class EncoderIntegrationTests(unittest.TestCase):
     def test_bilingual_http_scoring_and_token_budget(self):
-        model = Path(__file__).parent / "out/demo/model.json"
+        model = Path(os.environ.get("LMP_TEST_MODEL", "out/demo/model.json"))
         scorer = Scorer(model, allow_demo=True, local_only=True)
         token = "a" * 32
         headers = {"Authorization": f"Bearer {token}"}
