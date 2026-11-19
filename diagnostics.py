@@ -10,7 +10,7 @@ import torch
 from sentence_transformers import SentenceTransformer
 
 from experiment import MODES, encode, fit, predicted, summaries, targets
-from lmp import MODEL, MODEL_REVISION, read_rows, write_json
+from lmp import MODEL, MODEL_REVISION, metrics, read_rows, write_json
 
 
 def run(root):
@@ -45,8 +45,8 @@ def run(root):
         target_rows = [item for item in test if item["language"] == target]
         target_x = {mode: ex[mode][test_mask] for mode in MODES}
         transfer[f"{source}_to_{target}"] = {
-            mode: by_lang["all"] for mode, by_lang in summaries(
-                target_rows, predicted(target_x, target_rows, heads, {})).items()
+            mode: metrics(targets(target_rows), values)
+            for mode, values in predicted(target_x, target_rows, heads, {}).items()
         }
     write_json(root / "diagnostics.json", {"synthetic": True, "seed_runs": seeds,
                                           "stability": stability, "language_transfer": transfer})
