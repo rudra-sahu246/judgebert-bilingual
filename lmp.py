@@ -110,25 +110,60 @@ def prediction(value):
 
 
 def evidence(row):
+    changes = text_changes(row)
+    return changes[0] if changes else None
+
+
+LEGAL_PATTERNS = {
+    "number_or_date": r"\d+(?:[./-]\d+)*",
+    "date": r"\d{1,4}[./-]\d{1,2}(?:[./-]\d{1,4})?",
+    "exception": r"unless|except|सिवाय|को छोड़कर",
+    "condition": r"if|provided that|after approval|यदि|अगर|बशर्ते|अनुरोध मिलने पर|स्वीकृति मिलने पर|स्वीकृति के बाद",
+    "obligation_or_permission": r"must|shall|may|should|होगा|होगी|होंगे|चाहिए|सकता है|सकती है",
+    "negation": r"not|never|नहीं",
+    "entity": r"tenant|landlord|technician|किरायेदार|मकान मालिक|तकनीशियन",
+    "scope": r"only|all|every|each|हर|सभी|केवल|सिर्फ",
+}
+
+
+def text_changes(row):
     import re
 
     original, simplified = row["original"], row["simplified"]
-    patterns = {
-        "number_or_date": r"\d+(?:[./-]\d+)*",
-        "exception": r"unless|except|सिवाय|को छोड़कर",
-        "condition": r"if|provided that|यदि|बशर्ते",
-        "obligation_or_permission": r"must|shall|may|होगा|सकता है|सकती है",
-        "scope": r"only|केवल|सिर्फ",
-    }
-    for label, pattern in patterns.items():
-        if label != "number_or_date":
+    changes = []
+    for label, pattern in LEGAL_PATTERNS.items():
+        if label not in ("number_or_date", "date"):
             pattern = rf"(?<![\w\u0900-\u097f])(?:{pattern})(?![\w\u0900-\u097f])"
         before = re.findall(pattern, original, flags=re.I)
         after = re.findall(pattern, simplified, flags=re.I)
         if Counter(x.casefold() for x in before) != Counter(x.casefold() for x in after):
-            return {"possible_change": label, "original_matches": before,
-                    "simplified_matches": after}
-    return None
+            changes.append({"possible_change": label, "original_matches": before,
+                            "simplified_matches": after})
+    return changes
+
+
+def legal_features(row, mode):
+    changes = {item["possible_change"] for item in text_changes(row)}
+    context = row.get("context", "") if mode == "with_context" else ""
+    import re
+
+    numbers = lambda text: set(re.findall(r"\d+", text))
+    introduced = numbers(row["simplified"]) - numbers(row["original"])
+    return [float(label in changes) for label in LEGAL_PATTERNS] + [
+        overlap(row["original"], row["simplified"]),
+        float(bool(context and introduced and introduced <= numbers(context))),
+        float(bool(context and introduced - numbers(context))),
+    ]
+
+
+def head_prediction(vector, row, mode, head):
+    import numpy as np
+
+    if "hidden_weights" not in head:
+        return float(np.dot(vector, head["weights"]) + head["intercept"])
+    fused = np.r_[vector, legal_features(row, mode)]
+    hidden = np.maximum(0, np.asarray(head["hidden_weights"]) @ fused + head["hidden_bias"])
+    return float(np.dot(hidden, head["weights"]) + head["intercept"])
 
 
 def pair_inputs(rows, model):
@@ -228,6 +263,22 @@ def validate_model(artifact):
         heads = artifact.get("heads")
         head = heads.get(mode) if isinstance(heads, dict) else None
         weights = head.get("weights") if isinstance(head, dict) else None
+        if isinstance(head, dict) and "hidden_weights" in head:
+            import numpy as np
+
+            try:
+                hidden = np.asarray(head["hidden_weights"], dtype=float)
+                bias = np.asarray(head["hidden_bias"], dtype=float)
+                output = np.asarray(weights, dtype=float)
+                if hidden.shape == (32, 384 + len(LEGAL_PATTERNS) + 3) and (
+                    bias.shape == output.shape == (32,)
+                ) and all(np.isfinite(value).all() for value in (hidden, bias, output)) and (
+                    math.isfinite(head["intercept"])
+                ):
+                    continue
+            except (KeyError, TypeError, ValueError, OverflowError):
+                pass
+            raise ValueError(f"Invalid neural regression head for {mode}")
         if not isinstance(weights, list) or len(weights) != 384 or not all(
             type(value) in (int, float) and math.isfinite(value)
             for value in [*weights, head.get("intercept")]
@@ -278,7 +329,8 @@ class Scorer:
             mode = "identical" if identical else (
                 "with_context" if row.get("context", "").strip() else "sentence_only")
             item = {**row, "mode": mode, "evidence": evidence(row),
-                    "demo": self.artifact["demo"]}
+                    "evidence_all": text_changes(row), "demo": self.artifact["demo"],
+                    "uncertainty": {"calibrated": False}}
             if identical:
                 item.update(prediction(10))
             else:
@@ -290,8 +342,7 @@ class Scorer:
                 for index, mode in pending])
             for (index, mode), vector in zip(pending, vectors):
                 head = self.artifact["heads"][mode]
-                results[index].update(prediction(
-                    np.dot(vector, head["weights"]) + head["intercept"]))
+                results[index].update(prediction(head_prediction(vector, rows[index], mode, head)))
         for item in results:
             if "expected" in item:
                 item["passes_expected_decision"] = item["decision"] == item["expected"]

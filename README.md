@@ -1,5 +1,20 @@
 # Legal Meaning Preservation in English and Hindi
 
+## Automated synthetic workflow
+
+The main workflow uses synthetic supervision and requires zero human annotation. With the environment and encoder cache installed, `./reproduce.ps1` runs both experiments, evaluates the selected checkpoint, exports the research materials and runs the offline tests.
+
+```powershell
+./reproduce.ps1
+./start-local.ps1
+```
+
+`out/synthetic` holds the initial run. `out/synthetic-v2` holds the expanded run and its comparison with the incumbent on the same validation partition. The launcher prefers the expanded run when present. The trained scores represent performance against generated legal transformations and have not been validated against human legal judgments.
+
+See [Synthetic methodology](SYNTHETIC.md) for the model architecture, generation rules, selection criteria, and interpretation of results. The older small demo and human-research commands below are optional workflows.
+
+The reproducibility archive contains the generated data, numerical heads, tokenizer configuration, environment versions, reports and file hashes. The encoder weights are supplied separately by the pinned model cache. For a GitHub submission, commit the source and fixture files, and attach `research-run.zip` to the submission or release.
+
 The CLI compares an original lease clause with a simplified version. It uses a frozen multilingual MiniLM encoder and a Ridge regression head. The two heads differ only in whether the input includes surrounding legal context.
 
 ## Run the demo

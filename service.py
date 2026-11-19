@@ -89,9 +89,10 @@ def create_app():
             except Exception:
                 LOGGER.error("Scoring failed")
                 raise HTTPException(500, "Scoring failed") from None
-        public_fields = ("id", "language", "score", "decision", "mode", "evidence")
+        public_fields = ("id", "language", "score", "decision", "mode", "evidence",
+                         "evidence_all", "uncertainty")
         return {"model_origin": app.state.model_origin,
-                "predictions": [{field: item[field] for field in public_fields}
+                "predictions": [{field: item.get(field) for field in public_fields}
                                  for item in result]}
 
     return app
