@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f8">
+  <title>ClauseLens · Legal meaning evaluation</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#overview" aria-label="ClauseLens home">
+        <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 5.5h11l5 5V26H8z"/><path d="M19 5.5v5h5M12 15h8M12 19h8M12 23h5"/></svg></span>
+        <span><strong>ClauseLens</strong><small>RESEARCH STUDIO</small></span>
+      </a>
+
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button class="nav-link active" data-view="overview"><span class="nav-icon">◫</span>Overview</button>
+        <button class="nav-link" data-view="evaluate"><span class="nav-icon">◎</span>Evaluate clauses</button>
+        <button class="nav-link" data-view="challenge"><span class="nav-icon">⌁</span>Challenge review</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="connection-card"><span class="connection-dot"></span><span><b>Local workspace</b><small>Private · on this device</small></span></div>
+        <div class="sidebar-foot"><span class="foot-symbol">✳</span><span>English <i>·</i> Hindi<br><small>Meaning preservation research</small></span></div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>Workspace</span><b>/</b><strong id="crumb-label">Overview</strong></div>
+        <div class="top-actions"><span class="run-badge"><span class="run-dot"></span><span id="run-label">Loading experiment…</span></span><button class="icon-button" id="refresh-button" title="Refresh experiment data" aria-label="Refresh experiment data">↻</button><span class="avatar">CL</span></div>
+      </header>
+
+      <section class="view active" id="view-overview">
+        <div class="page-heading heading-row">
+          <div><div class="eyebrow">LEGAL NLP · EXPERIMENT DASHBOARD</div><h1>Research overview</h1><p class="subtitle">A clear view of bilingual clause scoring, model comparisons, and evaluation limits.</p></div>
+          <button class="button button-dark" data-open-view="evaluate"><span>＋</span> Score a clause</button>
+        </div>
+
+        <div class="notice synthetic-notice"><span class="notice-icon">i</span><div><strong>Synthetic evaluation data</strong><p>These metrics measure agreement with generated transformation labels. They are not human legal judgments or evidence of legal validity.</p></div><span class="notice-tag">RESEARCH PROTOTYPE</span></div>
+
+        <div class="stat-grid" id="stat-grid"><div class="stat-card skeleton"></div><div class="stat-card skeleton"></div><div class="stat-card skeleton"></div><div class="stat-card skeleton"></div></div>
+
+        <div class="section-heading"><div><div class="eyebrow">MODEL PERFORMANCE</div><h2>What context changes</h2></div><span class="section-meta" id="test-count">Internal test</span></div>
+        <div class="performance-layout">
+          <article class="panel chart-panel">
+            <div class="panel-heading"><div><h3>Internal test comparison</h3><p>Regression error and score correlation, higher is better for Pearson.</p></div><span class="mini-tag">HELD-OUT</span></div>
+            <div id="performance-chart" class="performance-chart"></div>
+            <div class="chart-foot"><span><i class="legend-dot teal"></i> Pearson correlation</span><span><i class="legend-dot orange"></i> RMSE (lower is better)</span></div>
+          </article>
+          <article class="panel takeaway-panel">
+            <div class="takeaway-icon">↗</div><div class="eyebrow">KEY FINDING</div><h3 id="finding-title">Context improves the score fit</h3><p id="finding-copy"></p>
+            <div class="takeaway-stat"><span>RMSE change</span><strong id="rmse-change">—</strong></div>
+            <div class="takeaway-note">The comparison uses generated labels. The independent challenge is small and uses synthetic cases.</div>
+          </article>
+        </div>
+
+        <div class="section-heading section-heading-spaced"><div><div class="eyebrow">DETAILED RESULTS</div><h2>Baseline and model metrics</h2></div><div class="segmented" role="group" aria-label="Select evaluation language"><button class="segment active" data-language="all">All</button><button class="segment" data-language="en">English</button><button class="segment" data-language="hi">Hindi</button></div></div>
+        <article class="panel table-panel"><div class="table-wrap"><table><thead><tr><th>METHOD</th><th>PEARSON ↑</th><th>SPEARMAN ↑</th><th>MAE ↓</th><th>RMSE ↓</th><th>PAIRS</th></tr></thead><tbody id="metrics-body"></tbody></table></div><div class="panel-caption">Metrics compare predictions with generated target scores on the same held-out pairs.</div></article>
+
+        <div class="section-heading section-heading-spaced"><div><div class="eyebrow">OUT-OF-TEMPLATE CHECK</div><h2>Independent challenge</h2><p class="section-description">44 differently worded synthetic pairs; results are descriptive, not human-validated.</p></div><span class="section-meta" id="challenge-pairs">— pairs</span></div>
+        <div class="challenge-grid" id="challenge-grid"></div>
+
+        <div class="section-heading section-heading-spaced"><div><div class="eyebrow">EXPERIMENT RECORD</div><h2>Run details</h2></div></div>
+        <div class="run-details-grid"><article class="panel details-panel"><h3>Dataset splits</h3><div id="split-list" class="split-list"></div></article><article class="panel details-panel"><h3>Model and environment</h3><div id="environment-list" class="detail-list"></div></article></div>
+        <article class="panel diagnostics-panel"><button class="details-toggle" id="diagnostics-toggle"><span><span class="eyebrow">ROBUSTNESS</span><strong>Seed stability and language transfer</strong></span><span class="toggle-chevron">⌄</span></button><div id="diagnostics-content" class="diagnostics-content hidden"></div></article>
+        <article class="panel diagnostics-panel"><button class="details-toggle" id="trials-toggle"><span><span class="eyebrow">CHECKPOINT SELECTION</span><strong>Experiment trial history</strong></span><span class="toggle-chevron">⌄</span></button><div id="trials-content" class="diagnostics-content hidden"></div></article>
+        <article class="panel diagnostics-panel"><button class="details-toggle" id="raw-toggle"><span><span class="eyebrow">FULL OUTPUTS</span><strong>Inspect backend result JSON</strong></span><span class="toggle-chevron">⌄</span></button><div id="raw-content" class="diagnostics-content hidden"></div></article>
+      </section>
+
+      <section class="view" id="view-evaluate">
+        <div class="page-heading"><div><div class="eyebrow">LIVE INFERENCE</div><h1>Evaluate a clause pair</h1><p class="subtitle">Compare the original with a proposed rewrite in English or Hindi.</p></div></div>
+        <div class="notice evaluator-notice"><span class="notice-icon">✳</span><div><strong>Scores are decision support for research</strong><p>Review the source text and possible change evidence yourself. The model can miss legal meaning changes and its uncertainty is not calibrated.</p></div></div>
+        <div class="evaluate-layout">
+          <form id="score-form" class="panel evaluator-form">
+            <div class="form-heading"><div><span class="step-number">01</span><span class="eyebrow">INPUT</span></div><span class="form-limit">Up to 256 model tokens</span></div>
+            <div class="form-row"><label for="language-input">Language</label><select id="language-input"><option value="en">English</option><option value="hi">Hindi</option></select></div>
+            <label class="field-label" for="original-input">Original clause <span>Required</span></label><textarea id="original-input" required rows="5" placeholder="Paste the original legal clause…"></textarea>
+            <label class="field-label" for="rewrite-input">Simplified or revised clause <span>Required</span></label><textarea id="rewrite-input" required rows="5" placeholder="Paste the proposed rewrite…"></textarea>
+            <label class="field-label" for="context-input">Surrounding context <span>Optional · enables context mode</span></label><textarea id="context-input" rows="3" placeholder="Add the related clause or situation…"></textarea>
+            <details class="token-settings"><summary>Local API token</summary><label for="token-input">Bearer token from your local service environment</label><input id="token-input" type="password" autocomplete="off" placeholder="Enter LMP_API_TOKEN"><small>Kept only in this browser tab. It is sent to the local scoring endpoint.</small></details>
+            <div class="form-actions"><button class="button button-quiet" type="button" id="clear-form">Clear</button><button class="button button-dark" type="submit" id="score-button">Score this pair <span>→</span></button></div>
+            <div id="score-error" class="form-error hidden" role="alert"></div>
+          </form>
+          <div class="result-column">
+            <article id="empty-result" class="panel empty-result"><div class="empty-orbit"><span>◎</span></div><h3>Your evaluation appears here</h3><p>Enter both clauses and score the pair to see the model output, decision band, and text-change evidence.</p><div class="empty-rule"></div><div class="empty-steps"><span><b>1</b> Compare the text</span><span><b>2</b> Review evidence</span><span><b>3</b> Apply your judgment</span></div></article>
+            <article id="score-result" class="panel score-result hidden"></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-challenge">
+        <div class="page-heading"><div><div class="eyebrow">ERROR ANALYSIS</div><h1>Challenge review</h1><p class="subtitle">Inspect individual cases from the independent synthetic set and see where wording affects predictions.</p></div><div class="case-filter"><label for="case-language">Language</label><select id="case-language"><option value="all">All languages</option><option value="en">English</option><option value="hi">Hindi</option></select></div></div>
+        <div class="notice synthetic-notice"><span class="notice-icon">i</span><div><strong>How to read these cases</strong><p>Expected scores are generated from prescribed transformations. A mismatch identifies a model error against those labels, not a legal finding.</p></div></div>
+        <div class="challenge-summary" id="challenge-summary"></div>
+        <div class="case-list" id="case-list"></div>
+      </section>
+
+      <footer class="page-footer"><span>ClauseLens <i>·</i> English + Hindi</span><span>Local research interface <i>·</i> Synthetic supervision</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/assets/app.js" defer></script>
+</body>
+</html>

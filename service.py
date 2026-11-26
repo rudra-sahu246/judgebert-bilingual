@@ -3,6 +3,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 import hmac
+import json
 import logging
 import os
 from pathlib import Path
@@ -10,12 +11,49 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
 from lmp import Scorer
 
 LOGGER = logging.getLogger(__name__)
 MAX_BODY_BYTES = 256 * 1024
+FRONTEND_DIR = Path(__file__).parent / "frontend"
+
+
+def _results_dir():
+    """Find the most useful completed run unless the caller selects one."""
+    configured = os.environ.get("LMP_RESULTS_DIR")
+    if configured:
+        return Path(configured).expanduser().resolve()
+
+    project = Path(__file__).parent
+    reproductions = project / "out" / "reproductions"
+    candidates = []
+    if reproductions.is_dir():
+        candidates.extend(sorted(
+            (path / "expanded" for path in reproductions.iterdir()),
+            key=lambda path: path.parent.stat().st_mtime,
+            reverse=True,
+        ))
+    candidates.extend([project / "out" / "synthetic-v2", project / "out" / "synthetic"])
+    model_path = Path(os.environ.get("LMP_MODEL_PATH", "out/demo/model.json"))
+    if not model_path.is_absolute():
+        model_path = project / model_path
+    candidates.append(model_path.parent)
+    return next((path for path in candidates if (path / "report.json").is_file()), candidates[-1])
+
+
+def _read_json(root, relative):
+    path = root / relative
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        LOGGER.warning("Could not read dashboard result file %s", path)
+        return None
 
 
 class Pair(BaseModel):
@@ -48,7 +86,37 @@ def create_app():
         app.state.capacity = asyncio.Semaphore(1)
         yield
 
-    app = FastAPI(title="Legal Meaning Preservation", version="1.0", lifespan=lifespan)
+    app = FastAPI(title="Legal Meaning Preservation", version="1.1", lifespan=lifespan)
+
+    if FRONTEND_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=FRONTEND_DIR), name="assets")
+
+    @app.get("/")
+    async def dashboard():
+        index = FRONTEND_DIR / "index.html"
+        if not index.is_file():
+            raise HTTPException(404, "Dashboard files are missing")
+        return FileResponse(index)
+
+    @app.get("/api/overview")
+    async def overview():
+        root = _results_dir()
+        report = _read_json(root, "report.json")
+        if report is None:
+            raise HTTPException(404, f"No experiment report found under {root}")
+        return {
+            "run_name": root.name,
+            "results_dir": str(root),
+            "model_path": str(Path(os.environ.get("LMP_MODEL_PATH", "out/release/model.json")).resolve()),
+            "model_origin": "synthetic" if report.get("synthetic") else "research",
+            "report": report,
+            "independent": _read_json(root, "independent.json"),
+            "audit": _read_json(root, "data/audit.json"),
+            "independent_audit": _read_json(root, "independent_audit.json"),
+            "diagnostics": _read_json(root, "diagnostics.json"),
+            "error_analysis": _read_json(root, "independent_errors.json") or _read_json(root, "error_analysis.json"),
+            "environment": _read_json(root, "environment.json"),
+        }
 
     @app.get("/healthz")
     async def health():

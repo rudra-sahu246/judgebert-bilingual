@@ -1,3 +1,31 @@
 .venv/
+.venv-*/
 __pycache__/
 out/
+output/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.token
+*token*.txt
+
+# Local machine and generated artifacts
+.DS_Store
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Private or generated research data
+data/pairs.jsonl
+data/release-pairs.jsonl
+data/release-ratings.jsonl
+data/*ratings*.jsonl

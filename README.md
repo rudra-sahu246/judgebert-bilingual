@@ -94,6 +94,31 @@ Release policy version 2 requires **both scoring modes in each language** to ach
 
 ## Serve an approved model
 
+### Local research dashboard
+
+The FastAPI service also serves a browser dashboard at `http://127.0.0.1:8000/`. It reads the completed experiment report, baseline and model metrics, dataset audits, seed/transfer diagnostics, trial history and challenge error analysis. The clause evaluator calls the same local `/v1/score` API. The dashboard labels the included results as synthetic and keeps the API token in the browser tab only.
+
+On macOS or Linux, first install the service dependencies and train the demo model if needed:
+
+```bash
+python -m pip install -r requirements-service.txt
+python lmp.py train data/demo.jsonl --demo --out out/demo
+```
+
+Then start the local server. Set `LMP_RESULTS_DIR` to the completed expanded experiment directory when it is not in one of the default result locations:
+
+```bash
+export LMP_API_TOKEN="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+export LMP_MODEL_PATH="out/demo/model.json"
+export LMP_ALLOW_SYNTHETIC=1
+export LMP_RESULTS_DIR="out/reproductions/mac-run/expanded"
+python -m uvicorn service:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000/`, select **Evaluate clauses**, expand **Local API token**, and enter the same value used for `LMP_API_TOKEN`. The scoring form sends the clause pair to the local service and displays the score, decision band and possible text-change markers. To show another run, change `LMP_RESULTS_DIR` and restart the server. The Windows `start-local.ps1` launcher works with the same dashboard; copy its generated token from `out/local-api-token.txt` into the evaluator.
+
+The synthetic demo is only for local research and presentation. It is not a release-approved model and does not represent human legal judgments.
+
 For a lightweight local run with synthetic weights, run `./start-local.ps1` after training the demo. This runs directly on Windows with one inference thread and uses the cached encoder. It saves the API token in `out/local-api-token.txt`. API responses include `model_origin: synthetic` for this model. The demo has known false positives on unrelated passages.
 
 Install `requirements-service.txt`. Set `LMP_API_TOKEN` to a random secret with at least 32 ASCII characters. Set `LMP_MODEL_PATH` if the release artifact is outside `out/release/model.json`. The service loads the encoder from the local cache at startup.
